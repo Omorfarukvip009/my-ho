@@ -1,3 +1,4 @@
+
 import time
 import requests
 import logging
@@ -5,7 +6,7 @@ import json
 import os
 import re
 import sys
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Bot
 from telegram.error import TimedOut
 import asyncio
 import warnings
@@ -22,9 +23,6 @@ BASE_URL = "http://94.23.120.156"
 LOGIN_PAGE_URL = BASE_URL + "/ints/login"
 LOGIN_POST_URL = BASE_URL + "/ints/signin"
 DATA_URL = BASE_URL + "/ints/client/res/data_smscdr.php"
-
-# 🔹 ONLY NEW CONFIG
-NUMBER_CHANNEL = "@motion_numbers"
 
 # Initialize Telegram bot
 bot = Bot(token=BOT_TOKEN)
@@ -103,22 +101,33 @@ def build_api_url():
     )
 
 t = u
+
 already_sent = load_already_sent()
 
 def fetch_data():
     url = build_api_url()
-    headers = {"X-Requested-With": "XMLHttpRequest"}
+    headers = {
+        "X-Requested-With": "XMLHttpRequest"
+    }
 
     try:
         response = session.get(url, headers=headers, timeout=10)
         logging.info(f"Response Status: {response.status_code}")
         if response.status_code == 200:
-            return response.json()
+            try:
+                return response.json()
+            except json.JSONDecodeError as e:
+                logging.error(f"[!] JSON decode error: {e}")
+                logging.debug("Partial response:\n" + response.text[:300])
+                return None
         elif response.status_code == 403 or "login" in response.text.lower():
             logging.warning("Session expired. Re-logging...")
             if login():
                 return fetch_data()
-        return None
+            return None
+        else:
+            logging.error(f"Unexpected error: {response.status_code}")
+            return None
     except Exception as e:
         logging.error(f"Fetch error: {e}")
         return None
@@ -154,22 +163,8 @@ async def sent_messages():
                         f"*আমাদের ব্যাকআপ চ্যানেল এ জয়েন {escape_markdown(u)}*  *{escape_markdown(TG_Username)}*"
                     )
 
-                    # 🔹 ONLY ADDITION: NUMBER CHANNEL BUTTON
-                    keyboard = [[
-                        InlineKeyboardButton(
-                            "📢 NUMBER CHANNEL",
-                            url=f"https://t.me/{NUMBER_CHANNEL.lstrip('@')}"
-                        )
-                    ]]
-                    reply_markup = InlineKeyboardMarkup(keyboard)
-
                     try:
-                        await bot.send_message(
-                            chat_id=CHAT_ID,
-                            text=text,
-                            parse_mode="MarkdownV2",
-                            reply_markup=reply_markup
-                        )
+                        await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="MarkdownV2")
                         save_already_sent(already_sent)
                         logging.info(f"[+] Sent OTP: {otp}")
                     except TimedOut:
@@ -178,6 +173,8 @@ async def sent_messages():
                         logging.error(f"Telegram error: {e}")
             else:
                 logging.info(f"No OTP found in message: {message}")
+    else:
+        logging.info("No data or invalid response.")
 
 async def main():
     logging.info("Bot started running...")
@@ -190,3 +187,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+        
