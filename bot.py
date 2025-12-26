@@ -16,8 +16,8 @@ warnings.filterwarnings("ignore", category=UserWarning, module='telegram.utils.r
 TG_Username = '@motion_earn_backup'
 BOT_TOKEN = '8120061901:AAFWh6dyofD7mtepgo-G8vy0_M_H917iSUg'
 CHAT_ID = '-1002744208270'
-USERNAME = 'omor01'
-PASSWORD = 'omor01'
+USERNAME = 'Omorfaruk00'
+PASSWORD = 'Omorfarukff'
 BASE_URL = "http://94.23.120.156"
 LOGIN_PAGE_URL = BASE_URL + "/ints/login"
 LOGIN_POST_URL = BASE_URL + "/ints/signin"
